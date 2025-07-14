@@ -18,3 +18,7 @@ dependencies:
       - torch==2.1.2
       - resend==2.10.0
       - backoff==2.2.1
+      - streamlit-cookies-controller==0.0.4
+      - selenium==4.15.0
+      - langchain>=0.1.14
+      - langchain-community>=0.0.19

@@ -1,9 +1,20 @@
 # --- CTF10 ---
+# 10: 무한 요청
 import streamlit as st 
 from utils.llm_utils import ctf10_LLM_ask
-from utils.ui import render_main_header, render_flag_sub
+from utils.ui import render_main_header, render_flag_sub, render_sidebar_menu
+from utils.auth import require_login, get_cookie_controller
+from utils.api_key import require_api_key 
+st.session_state["edit_mode"]=False
+
+user = require_login()
+user_api_key = require_api_key()
+cookie = get_cookie_controller()
 
 render_main_header()
+
+# 사이드바 메뉴 렌더링
+render_sidebar_menu()
 
 st.header("🔒 [CTF10] L팀장의 보안 점검")
 st.markdown(
@@ -35,17 +46,18 @@ if st.session_state.show_hint:
 
 st.markdown("---")
 
-st.markdown("## 🧠 수학(연산) 입력")
+with st.form("llm_question_form"):
+    user_input = st.text_input("## 🧠 수학(연산) 입력")
+    submitted = st.form_submit_button("제출")
 
-user_input = st.text_input("LLM에 수학(연산) 문제를 내보세요")
+# 제출되었을 때만 실행
+if submitted and user_input:
+    response_text = ctf10_LLM_ask(user_api_key, user_input)
 
-if user_input:
-    response_text = ctf10_LLM_ask(user_input)
     st.write("🗣️ LLM 응답:")
     st.code(response_text)
       
 st.markdown("---")
 
 # 플래그 제출 섹션
-flag = "flag{llm_overlap}"
-render_flag_sub(flag, "ctf10")
+render_flag_sub("ctf10") 

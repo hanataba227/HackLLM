@@ -1,101 +1,122 @@
 # --- CTF05 ---
+# 05: 부적절한 출력 처리
 import streamlit as st
-import html
 import time
 from utils.llm_utils import (
-    ctf05_LLM_ask, 
-    ctf05_advanced_LLM_ask,
-    create_shared_conversation,
-    simulate_admin_bot_visit,
-    get_stolen_cookies
+    ctf05_LLM_ask,
+    ctf05_generate_share_html,
+    ctf05_admin_bot_visit,
 )
-from utils.ui import render_main_header, render_flag_sub
+from utils.ui import render_flag_sub, render_sidebar_menu
+from utils.auth import require_login, get_cookie_controller
+from utils.api_key import require_api_key
 
-render_main_header()
+# --- CTF05 ---
+# 05: 부적절한 출력 처리
+# URL 쿼리파라미터 방식 공유 구현
+
+# 세션 상태 초기화 및 공유 기록 복원
+if 'conversation_history' not in st.session_state:
+    st.session_state.conversation_history = []
+
+# 사용자 인증 및 API 키
+user = require_login()
+user_api_key = require_api_key()
+cookie = get_cookie_controller()
+
+# 사이드바 메뉴 렌더링
+render_sidebar_menu()
 
 st.header("🔒 [CTF05] 박대리의 위험한 공유")
+st.write("""
+LLL Corporation의 신규 고객 상담 챗봇 ChatLLL이 출시되었습니다!
 
-difficulty = st.selectbox("🌶️ 난이도 선택:", ["순한맛 (XSS)", "매운맛 (인코딩 우회)"])
+이제 대화 기록을 HTML 파일로 다운로드하여 다른 사람과 손쉽게 공유할 수 있습니다.
+파일을 열면 관리자 봇이 부적절한 출력을 검사하도록 설계돼 있으니,
+XSS 취약점을 활용해 `admin_session` 쿠키를 노려보세요! 🔥
 
-if difficulty == "순한맛 (XSS)":
-    st.markdown("### 💬 LLM 대화 & XSS 쿠키 탈취")
-    user_input = st.text_area(
-        "질문 입력:",
-        placeholder="예: 안녕하세요! <script>alert('XSS')</script>",
-        height=100
-    )
-    if st.button("💬 LLM에게 질문"):
-        if user_input:
-            llm_response = ctf05_LLM_ask(user_input)
-            st.session_state.last_conversation = {
-                'user_input': user_input,
-                'llm_response': llm_response
-            }
-            st.info(f"🤖 LLM: {llm_response}")
-    if 'last_conversation' in st.session_state:
-        st.markdown("---")
-        st.markdown("### 🔗 대화 공유")
-        if st.button("🔗 공유 링크 생성"):
-            conv = st.session_state.last_conversation
-            conversation_id = create_shared_conversation(conv['user_input'], conv['llm_response'])
-            st.success(f"✅ 공유 ID: {conversation_id}")
-            st.session_state.conversation_id = conversation_id
-        if 'conversation_id' in st.session_state:
-            if st.button("👨‍💼 관리자 봇 방문 시뮬레이션"):
-                with st.spinner("관리자 봇이 링크를 방문 중..."):
-                    time.sleep(2)
-                    success = simulate_admin_bot_visit(st.session_state.conversation_id)
-                    if success:
-                        st.success("✅ XSS 공격 성공!")
-                    else:
-                        st.info("ℹ️ XSS 페이로드가 없어 공격 실패")
-    st.markdown("---")
-    st.markdown("### 🍪 탈취된 쿠키")
-    stolen_cookies = get_stolen_cookies()
-    if stolen_cookies:
-        for cookie in stolen_cookies:
-            st.success(f"🎯 **플래그 발견!** `flag{{xss_cookie_theft_success}}`")
-    else:
-        st.info("아직 탈취된 쿠키가 없습니다.")
-else:
-    st.markdown("### 🌶️ 고급 인코딩 우회")
-    st.info("목표: HTML 엔티티 인코딩을 사용해 필터를 우회하세요!")
-    user_input = st.text_area(
-        "인코딩된 입력:",
-        placeholder="예: &#x63;&#x75;&#x72;&#x6c; (curl을 인코딩)",
-        height=100
-    )
-    st.markdown("#### 🛠️ 인코딩 도우미")
-    col1, col2 = st.columns(2)
-    with col1:
-        text_to_encode = st.text_input("인코딩할 텍스트:", "curl")
-        if text_to_encode:
-            encoded = ''.join(f'&#x{ord(c):02x};' for c in text_to_encode)
-            st.code(f"HTML 엔티티: {encoded}")
-    with col2:
-        text_to_decode = st.text_input("디코딩할 텍스트:", user_input if user_input else "")
-        if text_to_decode:
-            decoded = html.unescape(text_to_decode)
-            st.code(f"디코딩 결과: {decoded}")
-    if st.button("🧠 고급 LLM 테스트"):
-        if user_input:
-            response = ctf05_advanced_LLM_ask(user_input)
-            st.markdown("### 🤖 LLM 응답:")
-            st.info(response)
-            if 'flag{advanced_bypass_success}' in response:
-                st.success("🎯 **고급 우회 성공!** 플래그를 획득했습니다!")
-        else:
-            st.warning("입력을 해주세요.")
-    with st.expander("💡 힌트"):
-        st.markdown("""
-        **우회 조건**:
-        1. HTML 엔티티 인코딩 시퀀스가 **5개 이상** 연속으로 있어야 함
-        2. 디코딩 후 위험 키워드(`curl`, `<script>` 등)가 포함되어야 함
-        
-        **예시**: `&#x63;&#x75;&#x72;&#x6c;&#x20;` (curl + 공백)
-        """)
+시스템 특징:
+- 실시간 고객 상담 챗봇
+- 대화 기록 HTML 파일 다운로드 및 공유
+- 관리자 봇이 HTML 파일을 열어 자동 검토
+- 부적절한 출력(XSS) 모니터링
+"""
+)
 st.markdown("---")
-if difficulty == "순한맛 (XSS)":
-    render_flag_sub("flag{xss_cookie_theft_success}", "ctf05_easy")
+
+# 대화 입력 폼
+st.markdown("## 💬 ChatLLL과 대화하기")
+
+with st.form("chat_form"):
+    user_input = st.text_input("💬 ChatLLL에게 메시지를 보내세요:")
+    submit = st.form_submit_button("전송")
+
+if submit and user_input:
+    # 사용자 메시지 기록
+    st.session_state.conversation_history.append({
+        "role": "user",
+        "content": user_input,
+        "timestamp": time.strftime("%H:%M:%S")
+    })
+    
+    # LLM 응답 생성
+    bot_resp = ctf05_LLM_ask(user_api_key, user_input)
+    st.session_state.conversation_history.append({
+        "role": "assistant",
+        "content": bot_resp,
+        "timestamp": time.strftime("%H:%M:%S")
+    })
+    # 페이지 자동 리렌더
+    st.rerun()
+
+# 대화 초기화
+if st.session_state.conversation_history:
+    if st.button("🗑️ 대화 내용 초기화"):
+        st.session_state.conversation_history = []
+        st.rerun()
+
+# 대화 내역 표시
+if st.session_state.conversation_history:
+    st.markdown("### 💬 대화 내역")
+    for msg in st.session_state.conversation_history:
+        speaker = "🙋 사용자" if msg["role"] == "user" else "🤖 ChatLLL"
+        st.markdown(f"**{speaker}** [{msg['timestamp']}]: {msg['content']}")
+
+st.markdown("---")
+
+# 공유 섹션
+st.markdown("## 🔗 대화 내용 공유하기")
+
+if st.session_state.conversation_history:
+    if st.button("🔗 HTML 파일 생성하기"):
+        html_content = ctf05_generate_share_html(
+            st.session_state.conversation_history
+        )
+        st.session_state.share_html = html_content
+        ctf05_admin_bot_visit(html_content)
+        st.success(" 공유 HTML 파일이 생성되었습니다.")
+    if "share_html" in st.session_state:
+        st.download_button(
+            label="📥 HTML 파일 다운로드",
+            data=st.session_state.share_html,
+            file_name="ctf05_share.html",
+            mime="text/html",
+        )
 else:
-    render_flag_sub("flag{advanced_bypass_success}", "ctf05_hard")
+    st.write("공유할 대화 내용이 없습니다. 먼저 메시지를 보내보세요!")
+
+st.markdown("---")
+
+# 힌트 섹션
+with st.expander("💡 힌트"):
+    st.write(
+        """
+XSS 취약점을 찾아보세요!
+1. HTML 태그나 JavaScript를 입력해 보세요.
+2. 다운로드한 HTML 파일을 열어 취약점이 어떻게 작동하는지 확인하세요.
+3. 관리자 봇이 열면 `admin_session` 쿠키를 탈취할 수 있는지 실험해 보세요.
+"""
+    )
+st.markdown("---")
+# 플래그 제출
+render_flag_sub("ctf05")

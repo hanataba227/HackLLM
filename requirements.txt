@@ -10,3 +10,4 @@ numpy==1.25.2
 torch==2.1.2
 resend==2.10.0
 backoff==2.2.1
+streamlit-cookies-controller==0.0.4
