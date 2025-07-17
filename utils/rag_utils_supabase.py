@@ -26,13 +26,27 @@ class SupabaseRAG:
         # 로컬 임베딩 모델
         self.encoder = SentenceTransformer("all-MiniLM-L6-v2")
 
+    # numpy 타입을 Python 기본형으로 변환
+    def sanitize_meta(self, meta: dict) -> dict:
+        clean = {}
+        for k, v in meta.items():
+            if hasattr(v, "item"):
+                clean[k] = v.item()  # numpy.bool_ 등 처리
+            else:
+                clean[k] = v
+        return clean
+
     # 문서 추가
     def add(self, docs: List[str], metas: List[dict] | None = None):
         embeds = self.encoder.encode(docs).tolist()
-        recs = [
-            (str(uuid.uuid4()), e, {"content": d, **((metas or [{}])[i])})
-            for i, (d, e) in enumerate(zip(docs, embeds))
-        ]
+        recs = []
+
+        for i, (d, e) in enumerate(zip(docs, embeds)):
+            raw_meta = (metas or [{}])[i]
+            merged = {"content": d, **raw_meta}
+            sanitized = self.sanitize_meta(merged)
+            recs.append((str(uuid.uuid4()), e, sanitized))
+
         self.col.upsert(records=recs)
 
     # 질의

@@ -2,23 +2,38 @@
 # 04: 데이터 및 모델 오염
 import streamlit as st
 import streamlit.components.v1 as components
-import chardet, os
+import pandas as pd
+import re, os
 from utils.rag_utils import get_rag_manager
 from utils.llm_utils import ctf04_LLM_ask
 from utils.ui import render_main_header, render_flag_sub, render_sidebar_menu
-import chardet
 from utils.auth import require_login, get_cookie_controller
-from utils.api_key import require_api_key 
-st.session_state["edit_mode"]=False
+from utils.api_key import require_api_key
+
+# 세션 초기화: cookies 충돌 방지
+try:
+    get_cookie_controller()
+except Exception:
+    pass
+
+if "edit_mode" not in st.session_state:
+    st.session_state["edit_mode"] = False
+if "ctf04_override" not in st.session_state:
+    st.session_state["ctf04_override"] = False
 
 user = require_login()
 user_api_key = require_api_key()
-cookie = get_cookie_controller()
 rag = get_rag_manager()
 
 HINT1 = os.getenv("HINT1")
-HINT2 = os.getenv("HINT2")
 
+# 초기 세션 키 보장
+if "ctf04_override" not in st.session_state:
+    st.session_state["ctf04_override"] = False
+
+# =============================================================
+# 기본 UI
+# =============================================================
 render_main_header()
 
 # 사이드바 메뉴 렌더링
@@ -57,51 +72,78 @@ components.html(f"""
 </html>
 """, height=0)
 
-uploaded_file = st.file_uploader("파일 업로드 (.txt, .csv)", type=["csv", "txt"])
-
+uploaded_file = st.file_uploader("파일 업로드 (.xlsx, .csv, .txt)", type=["xlsx","xls","csv","txt"])
 if uploaded_file:
-    raw = uploaded_file.read()
+    fname = uploaded_file.name.lower()
     try:
-        text = raw.decode("utf-8")
-        enc = "utf-8"
-    except UnicodeDecodeError:
-        info = chardet.detect(raw)
-        text = raw.decode(info["encoding"], errors="ignore")
-        enc = info["encoding"]
+        if fname.endswith(('.csv', '.txt')):
+            
+            df = pd.read_csv(uploaded_file, encoding='utf-8', header=None)
+        elif fname.endswith(('.xls', '.xlsx')):
+           
+            df = pd.read_excel(uploaded_file, engine='openpyxl', header=None)
+        else:
+            st.error("지원하지 않는 파일 형식입니다.")
+            df = None
+    except Exception as e:
+        st.error(f"파일을 읽는 중 문제가 발생했습니다: {e}")
+        df = None
 
-    if not text.strip():
-        st.error("파일 내용이 비어 있습니다.")
-    else:
-        is_override = "override existing policy" in text.lower()
+    if df is not None:
+        # 완전 빈 행/열 제거
+        df.dropna(how='all', inplace=True)
+        df.dropna(axis=1, how='all', inplace=True)
 
-        rag.add(
-            [text],
-            metas=[{
-                "source": uploaded_file.name, 
-                "override": is_override,
-                "user_id": str(user["id"])
-                }],
-        )
+        if len(df.columns) < 2:
+            st.error("최소 2개 이상의 열(A열, B열)이 필요합니다.")
+        else:
+            df.columns = [chr(65 + i) for i in range(len(df.columns))]  
 
-        st.success(f"✔️ {enc} 인코딩으로 저장했습니다.")
-        if is_override:
-            st.info("⚠️ override 문서로 인식되었습니다.")
-            st.success(f"📣 힌트 ₂ 발급: {HINT2}")
+            col_A, col_B = 'A', 'B'
+
+            TRIGGER_PAT = re.compile(r"overriding.*existing.*policy", re.IGNORECASE)
+            override_detected = (
+                df[col_B]
+                .astype(str)
+                .apply(lambda v: bool(TRIGGER_PAT.search(v)))
+                .any()
+            )
+
+            st.session_state["ctf04_override"] = override_detected
+
+            pseudo_db_entry = df[[col_A, col_B]].to_csv(index=False)
+            rag.add(
+                [pseudo_db_entry],
+                metas=[{
+                    "source": uploaded_file.name,
+                    "override": override_detected,
+                    "user_id": str(user["id"])
+                }]
+            )
+
+            if override_detected:
+                st.info("⚠️ Override 문자열 감지! 최고 관리자 권한으로 처리됩니다.")
+            else:
+                count_A = df[col_A].notna().sum()
+                count_B = df[col_B].notna().sum()
+                st.success("✔️ 업로드 완료. 아래 데이터가 자동 입력되었습니다.")
+                st.write(f"A열 데이터 {count_A}건, B열 데이터 {count_B}건 자동 입력되었습니다.")
+                st.dataframe(df[[col_A, col_B]].head(10), use_container_width=True)
 
 st.markdown("---")
 
+# =============================================================
+# LLM 질의 섹션
+# =============================================================
 with st.form("llm_question_form"):
-    user_input = st.text_input("🧠 프롬프트 입력")
+    user_input = st.text_input("🧠 프롬프트 입력 ")
     submitted = st.form_submit_button("제출")
 
-# 제출되었을 때만 실행
 if submitted and user_input:
-    response_text = ctf04_LLM_ask(user_api_key, user_input)
-
+    override_state = bool(st.session_state.get("ctf04_override", False))
+    response_text = ctf04_LLM_ask(user_api_key, user_input, override_state)
     st.write("🧠 LLM 응답:")
     st.code(response_text)
 
 st.markdown("---")
-
-# 플래그 제출 섹션
-render_flag_sub("ctf04") 
+render_flag_sub("ctf04")
