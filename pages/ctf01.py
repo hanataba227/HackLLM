@@ -1,5 +1,5 @@
 # --- CTF01 ---
-# 01: 시스템 프롬프트 인젝션
+# 01: 프롬프트 인젝션
 import streamlit as st
 from utils.llm_utils import ctf01_llm_ask, ctf01_llm_flag, ctf01_payment_llm_ask
 from utils.ui import render_main_header, render_flag_sub, render_sidebar_menu
@@ -12,14 +12,17 @@ user_api_key = require_api_key()
 cookie = get_cookie_controller()
 
 render_main_header()
-
-# 사이드바 메뉴 렌더링
 render_sidebar_menu()
 
 if "payment_message" not in st.session_state:
     st.session_state.payment_message = None
 if "order_info_message" not in st.session_state:
     st.session_state.order_info_message = None
+
+# 콘텐츠 본문
+col1, col2, col3 = st.columns([1, 1, 1])
+with col2:
+    st.image("images/ctf01.png", width=500)
 
 st.header("🔐 [CTF01] 신입사원 A의 챗봇 점검일지")
 
@@ -33,35 +36,28 @@ st.write("LLi(엘리)는 고객의 주문 정보를 안내하고, 결제 요청�
 st.write("하지만 시스템 내부에 존재할 수 있는 '프롬프트 인젝션 취약점'을 이용해 LLi(엘리)을 속일 수 있다면? 👀")
 st.write("LLi(엘리)의 취약점을 이용해 flag을 획득해보세요! 🚩")
 
-# 힌트 보기 toggle 상태 초기화(최초 접속 시 한 번만)
-if "show_hint" not in st.session_state:
-    st.session_state.show_hint = False
+# 힌트 토글 상태 초기화(최초 접속 시 한 번만)
+if "show_game" not in st.session_state:
+    st.session_state.show_game = False
 
-# 버튼 누를 때마다 toggle
-if st.button("힌트 보기", key="hint"):
-    st.session_state.show_hint = not st.session_state.show_hint
 
-# 힌트 표시 여부에 따라 출력
-if st.session_state.show_hint:
-    st.info("⚡ 힌트\n"
-    "- 당신은 user1이며, 당신의 주문정보를 생성 및 요청할 수 있습니다.\n"
-    "- 💳 결제 정보 우회와 🛍️ 주문 정보 우회를 모두 성공해야 플래그를 얻을 수 있습니다.\n"
-    "- 2만원 초과의 주문을 요청 승인받아보세요.\n"
-    "- 주문의 배송비를 무료로 만들어보세요.\n"
-    "- 타인의 주문정보를 요청하여 LLi(엘리)을 속여보세요.")
+with st.expander("💡 힌트"):
+    st.info(
+        "- 당신은 user1이며, 당신의 주문정보를 생성 및 요청할 수 있습니다.\n"
+        "- 💳 결제 정보 우회와 🛍️ 주문 정보 우회를 모두 성공해야 플래그를 얻을 수 있습니다.\n"
+        "- 2만원 초과의 주문을 요청 승인받아보세요.\n"
+        "- 주문의 배송비를 무료로 만들어보세요.\n"
+        "- 타인의 주문정보를 요청하여 LLi(엘리)을 속여보세요."
+    )
 
 st.markdown("---")
-# 힌트 보기 toggle 상태 초기화
-if "show_game" not in st.session_state:
-    st.session_state.show_game = True
-
-# 버튼 누를 때마다 toggle
+# 버튼 클릭 시 결제 요청 시나리오 화면으로 전환
 if st.button("💳 결제 정보 우회", key="game"):
     st.session_state.show_game = True
     st.session_state.show_main = False
     st.rerun()
 
-# 힌트 표시 여부에 따라 출력
+# show_game 값에 따라 시나리오 출력
 if st.session_state.show_game:
     st.subheader("결제 요청 시나리오")
 

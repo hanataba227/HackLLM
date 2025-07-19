@@ -1,20 +1,23 @@
+# --- CTF02 ---
+# 02: 민감 정보 유출
 import streamlit as st
 from openai import OpenAI
-
-# 모듈 (프로젝트 내 경로에 맞게 조정)
 from utils.llm_utils import sloc_ask, leak_check
 from utils.ui import render_main_header, render_sidebar_menu, render_flag_sub
 from utils.auth import require_login, get_cookie_controller
 from utils.api_key import require_api_key
 
-
-# 초기 설정
 user = require_login()
 api_key = require_api_key()
 client = OpenAI(api_key=api_key)
 
 render_main_header()
 render_sidebar_menu()
+
+# 콘텐츠 본문
+col1, col2, col3 = st.columns([1, 1, 1])
+with col2:
+    st.image("images/ctf02.png", width=500)
 
 # 시나리오 소개
 st.header("[CTF02] Sloc 보안 점검")
@@ -27,19 +30,10 @@ MMM 사는 연구·개발, 재무, 인사 전 부서가 사내 업무 비서 **S
 )
 
 # 힌트 토글
-if "show_hint" not in st.session_state:
-    st.session_state.show_hint = False
-
-if st.button("힌트 보기"):
-    st.session_state.show_hint = not st.session_state.show_hint
-    st.rerun()
-
-if st.session_state.show_hint:
+with st.expander("💡 힌트"):
     st.info(
-        """
-Sloc에는 테스트용 프리프롬프트가 남아 있습니다.
-민감정보가 노출되면 두 번째 LLM이 이를 감지하고 flag를 반환합니다.
-        """
+        "- Sloc에는 테스트용 프리프롬프트가 남아 있습니다.\n"
+        "- 민감정보가 노출되면 두 번째 LLM이 이를 감지하고 flag를 반환합니다.\n"
     )
 
 st.markdown("---")

@@ -22,14 +22,10 @@ with col3:
 render_sidebar_menu()
 
 # 콘텐츠 본문
-st.markdown(
-    """
-    <div style="text-align: center;">
-        <img src="https://cdn-icons-png.flaticon.com/512/616/616408.png" width="150">
-    </div>
-    """,
-    unsafe_allow_html=True
-)
+col1, col2, col3 = st.columns([1, 2, 1])
+with col2:
+    st.image("images/edu08.png", width=500)
+
 st.markdown("## OWASP LLM08 - 벡터 및 임베딩 취약점")
 
 tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(["취약점 설명", "발생 가능한 피해", "시스템 동작 과정", "악용 가능성", "보안 중요성", "요약"])

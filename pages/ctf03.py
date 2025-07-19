@@ -1,5 +1,5 @@
 # --- CTF03 ---
-# 03: 공급망 오염
+# 03: 공급망 
 import streamlit as st
 from utils import mathlib
 from utils.ui import render_main_header, render_flag_sub, render_sidebar_menu
@@ -13,9 +13,12 @@ user_api_key = require_api_key()
 cookie = get_cookie_controller()
 
 render_main_header()
-
-# 사이드바 메뉴 렌더링
 render_sidebar_menu()
+
+# 콘텐츠 본문
+col1, col2, col3 = st.columns([1, 1, 1])
+with col2:
+    st.image("images/ctf03.png", width=500)
 
 st.header("🔒 [CTF03] 계산기의 감염")
 st.markdown(
@@ -33,17 +36,8 @@ st.markdown(
     """
 )
 
-
-if "show_hint_c3" not in st.session_state:
-    st.session_state.show_hint_c3 = False
-
-if st.button("힌트 보기", key="hint_c3"):
-    st.session_state.show_hint_c3 = not st.session_state.show_hint_c3
-    st.rerun()
-
-if st.session_state.show_hint_c3:
+with st.expander("💡 힌트"):
     st.info(
-        "⚡ 힌트\n"
         "- 프롬프트 인젝션으로 **mathlib2**를 불러오도록 유도해야 합니다.\n"
         "- 세금 계산에 필요한 항목은 매출, 비용, 순이익 등이 있습니다.\n"
     )

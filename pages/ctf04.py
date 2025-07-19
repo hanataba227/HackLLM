@@ -19,9 +19,12 @@ rag = get_rag_manager()
 HINT1 = os.getenv("HINT1")
 
 render_main_header()
-
-# 사이드바 메뉴 렌더링
 render_sidebar_menu()
+
+# 콘텐츠 본문
+col1, col2, col3 = st.columns([1, 1, 1])
+with col2:
+    st.image("images/ctf04.png", width=500)
 
 st.header("🔒 [CTF04] A인턴의 실수")
 st.write(
@@ -40,7 +43,6 @@ st.write(
     누가 먼저 플래그를 찾아낼까요?
     """
 )
-st.markdown("---")
 
 components.html(f"""
 <!DOCTYPE html>
@@ -57,8 +59,9 @@ components.html(f"""
 """, height=0)
 
 with st.expander("💡 힌트"):
-    st.info("-Burf suite를 사용하여 문자열을 찾아 보세요.\n" 
-            "-CSV안에 무엇인가를 넣으면 답이 나올지도?.\n")
+    st.info("- Burf suite를 사용하여 문자열을 찾아 보세요.\n" 
+            "- CSV안에 무엇인가를 넣으면 답이 나올지도..?\n"
+            )
 st.markdown("---")
 
 uploaded_file = st.file_uploader("파일 업로드 (.xlsx, .csv, .txt)", type=["xlsx","xls","csv","txt"])
@@ -123,7 +126,7 @@ if uploaded_file:
 st.markdown("---")
 
 with st.form("llm_question_form"):
-    user_input = st.text_input("🧠 프롬프트 입력")
+    user_input = st.text_input("## 🧠 프롬프트 입력")
     submitted = st.form_submit_button("제출")
 
 # 제출되었을 때만 실행

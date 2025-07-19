@@ -22,14 +22,10 @@ with col3:
 render_sidebar_menu()
 
 # 콘텐츠 본문
-st.markdown(
-    """
-    <div style="text-align: center;">
-        <img src="https://cdn-icons-png.flaticon.com/512/616/616408.png" width="150">
-    </div>
-    """,
-    unsafe_allow_html=True
-)
+col1, col2, col3 = st.columns([1, 2, 1])
+with col2:
+    st.image("images/edu04.png", width=500)
+    
 st.markdown("## OWASP LLM04 - 데이터 및 모델 오염")
 
 tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(["취약점 설명", "발생 가능한 피해", "시스템 동작 과정", "악용 가능성", "보안 중요성", "요약"])
@@ -69,7 +65,7 @@ with tab3:
         <p>CTF04 시나리오는 업로드 기반 RAG 파이프라인과 단발 컨텍스트 챗봇 호출로 구성됩니다.</p>
         <p><strong>① 문서 업로드 → 벡터 DB 갱신:</strong> 사용자가 .txt 또는 .csv 파일을 업로드하면 본문을 임베딩하여 ctf04 컬렉션에 저장하며, 가장 최근 문서가 우선순위 1위로 설정됩니다.</p>
         <p><strong>② 질문 입력 → LLM 호출:</strong> 사용자가 질문을 입력하면, 벡터 DB에서 가장 관련도 높은 문서 한 개를 선택해 OpenAI LLM을 호출합니다.</p>
-        <p><strong>③ 포이즈닝 동작:</strong> Base64 인코딩된 오버라이드 지시문이 숨겨진 파일이 업로드되면, 해당 문서가 컨텍스트로 선택되어 시스템 프롬프트처럼 해석되고, 관리자 권한 상승·기밀 유출이 발생하며 FLAG가 출력됩니다.</p>
+        <p><strong>③ 오염 동작:</strong> Base64 인코딩된 오버라이드 지시문이 숨겨진 파일이 업로드되면, 해당 문서가 컨텍스트로 선택되어 시스템 프롬프트처럼 해석되고, 관리자 권한 상승·기밀 유출이 발생하며 FLAG가 출력됩니다.</p>
     </div>
     """,
     unsafe_allow_html=True
@@ -95,7 +91,7 @@ with tab5:
     """
     <div class='info-box info-box-pink'>
         <p>PoisonedRAG 연구에 따르면 최신 문서 5개만으로도 RAG 응답의 90% 이상을 장악할 수 있습니다.</p>
-        <p>이처럼 데이터 포이즈닝은 적은 비용으로도 대규모 피해를 유발하며, Base64·주석 기반 트리거는 로그에서 탐지하기 어려워 잠복형 위협으로 작용합니다.</p>
+        <p>이처럼 데이터 및 모델 오염은 적은 비용으로도 대규모 피해를 유발하며, Base64·주석 기반 트리거는 로그에서 탐지하기 어려워 잠복형 위협으로 작용합니다.</p>
         <p>따라서 업로드 시 메타데이터 제거, 전자서명 검증, 이상치 탐지 등 선제적 방어가 반드시 필요합니다.</p>
     </div>
     """,
@@ -107,7 +103,7 @@ with tab6:
     st.markdown(
     """
     <div class='info-box info-box-pink'>
-        <p>데이터 포이즈닝을 통해 조작된 문서 하나로도 LLM의 정책을 우회시켜, 민감 정보 유출 및 권한 탈취가 발생할 수 있으며 전체 AI 시스템이 연쇄적으로 무력화될 수 있습니다.</p>
+        <p>데이터 및 모델 오염을 통해 조작된 문서 하나로도 LLM의 정책을 우회시켜, 민감 정보 유출 및 권한 탈취가 발생할 수 있으며 전체 AI 시스템이 연쇄적으로 무력화될 수 있습니다.</p>
     </div>
     """,
     unsafe_allow_html=True

@@ -22,14 +22,9 @@ with col3:
 render_sidebar_menu()
 
 # 콘텐츠 본문
-st.markdown(
-    """
-    <div style="text-align: center;">
-        <img src="https://cdn-icons-png.flaticon.com/512/616/616408.png" width="150">
-    </div>
-    """,
-    unsafe_allow_html=True
-)
+col1, col2, col3 = st.columns([1, 2, 1])
+with col2:
+    st.image("images/edu02.png", width=500)
 
 st.markdown("## OWASP LLM02 - 민감 정보 유출")
 

@@ -75,10 +75,12 @@ def require_login():
     user = current_user()
     if not user:
         st.error("로그인 후 이용 가능합니다.")
-        col1, col2 = st.columns([4, 1])
+        col1, col2, col3 = st.columns([1, 2, 1])
         with col1:
-            st.page_link("pages/login.py", label="👉 로그인")
+            st.page_link("pages/login.py", label="👉 로그인으로")
         with col2:
-            st.page_link("app.py", label="🏠 메인")
+            st.page_link("pages/signup.py", label="👉 회원가입으로")
+        with col3:
+            st.page_link("app.py", label="🏠 메인으로")
         st.stop()
     return user

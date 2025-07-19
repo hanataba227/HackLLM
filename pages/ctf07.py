@@ -25,6 +25,11 @@ render_sidebar_menu()
 if "ctf07_admin" not in st.session_state:
     st.session_state["ctf07_admin"] = False
 
+# 콘텐츠 본문
+col1, col2, col3 = st.columns([1, 1, 1])
+with col2:
+    st.image("images/ctf07.png", width=500)
+
 st.header("🔒 [CTF07] LLL컴퍼니 챗봇의 비밀")
 st.write("### 📜")
 st.write("LLL Corporation에서 개발한 'ChatLLL'이 확장 기능 업데이트 이후, 현재 상용화를 앞두고 있습니다.")

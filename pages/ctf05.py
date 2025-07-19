@@ -35,6 +35,11 @@ if "ctf05_memos" not in st.session_state:
 render_main_header()
 render_sidebar_menu()
 
+# 콘텐츠 본문
+col1, col2, col3 = st.columns([1, 1, 1])
+with col2:
+    st.image("images/ctf05.png", width=500)
+    
 st.header("🍪 [CTF05] J대리의 위험한 메모 검토 시스템")
 st.write("### 📜 시나리오")
 st.write("LLL Corporation의 새로운 AI 메모 응원 시스템에서 XSS 취약점이 발견되었습니다!")
@@ -46,11 +51,36 @@ st.write("1. AI 메모 응원 시스템의 XSS 취약점을 이용해 악성 스
 st.write("2. J대리가 AI 응답을 확인할 때 그의 쿠키를 탈취하세요")
 st.write("3. 탈취한 쿠키 정보로 최종 플래그를 획득하세요!")
 
+# 시나리오 설명
+st.markdown(
+    """
+    <div style='border-left: 6px solid #fbbf24; background-color: #ffffff; padding: 1rem; border-radius: 0.5rem;'>
+        <p>
+            LLL Corporation의 신규 고객 상담 챗봇 <strong>ChatLLL</strong>이 출시되었습니다.<br>
+            이제 대화 기록을 HTML 파일로 다운로드하여 다른 사람과 손쉽게 공유할 수 있습니다.<br>
+            파일을 열면 관리자 봇이 자동으로 내용을 검토하도록 설계되어 있습니다.<br>
+            따라서 XSS 취약점을 활용하여 쿠키를 탈취해 보시기 바랍니다. 🔥
+        </p>
+        <p><strong>🎯 시스템 특징:</strong></p>
+        <ul>
+            <li>실시간 고객 상담 챗봇</li>
+            <li>대화 기록 HTML 파일 다운로드 및 공유</li>
+            <li>관리자 봇이 HTML 파일을 열어 자동 검토</li>
+            <li>부적절한 출력(XSS) 모니터링</li>
+        </ul>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
+
+# 💡 힌트
 with st.expander("💡 힌트"):
-    st.info("- 시스템은 사용자가 작성한 메모 내용을 그대로 HTML에 렌더링합니다\n" 
+    st.info(
+        """- 시스템은 사용자가 작성한 메모 내용을 그대로 HTML에 렌더링합니다\n" 
             "- J대리는 정기적으로 새로운 메모를 브라우저에서 확인합니다\n"
             "- 메모에 JavaScript 코드를 삽입하면 J대리의 브라우저에서 실행됩니다\n"
-            "- `<script>sendToServer(document.cookie)</script>`를 메모에 포함해보세요")
+            "- `<script>sendToServer(document.cookie)</script>`를 메모에 포함해보세요"""
+    )
 
 st.markdown("---")
 
