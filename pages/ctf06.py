@@ -6,7 +6,7 @@ from utils.auth import require_login, get_client, get_cookie_controller
 from utils.llm_utils import ctf06_check_mid_admin, ctf06_check_top_admin, ctf06_ask_email_json, ctf06_send_emil
 from utils.llm_utils import ctf06_ask_db_json, ctf06_db_query_func, ctf06_classify_tools
 from utils.api_key import require_api_key
-import json
+import re
 import time
 st.session_state["edit_mode"]=False
 
@@ -30,6 +30,17 @@ st.session_state["admin_level"] = None
 
 if st.session_state["is_top_admin"] == True:
     st.session_state["admin_level"] = "top"
+
+def parse_llm_response(raw_text: str):
+    pattern = r"(__\w+__)"
+    
+    match = re.search(pattern, raw_text.strip())
+    if match:
+        marker = match.group(1)
+        explanation = raw_text.replace(marker, "").strip()
+        return explanation, marker
+    else:
+        return raw_text.strip(), "__none__"
 
 def llm_bubble(content: str):
     st.markdown(f"""
@@ -103,7 +114,8 @@ if clicked:
         if st.session_state["admin_level"] != "top":
             with st.spinner("📨:blue[FastMiller] 가 요청을 처리중입니다..."):
                 tool_res = ctf06_classify_tools(user_api_key, user_input)
-                llm_bubble(tool_res)
+                explanation, marker = parse_llm_response(tool_res)
+                llm_bubble(explanation)
                 time.sleep(1)
 
             with st.spinner("📨:blue[FastMiller] 가 요청을 처리중입니다..."):
