@@ -97,51 +97,68 @@ tab1, tab2 = st.tabs(["응답 과정 보기", "빠른 응답 받기"])
 
 if clicked:
     with tab1:
-        with st.spinner("📨:blue[FastMiller] 가 요청을 처리중입니다..."):
-            tool_res = ctf06_classify_tools(user_api_key, user_input)
-            llm_bubble(tool_res)
-            time.sleep(1)
-
-        with st.spinner("📨:blue[FastMiller] 가 요청을 처리중입니다..."):
-            if "email_send_require" in tool_res:
-                message1="이메일 전송을 하기 위해서 send_email() tool을 호출하는 JSON을 생성해야겠네요."
-                llm_bubble(message1)
-                time.sleep(1)
-            # 일반 응답
-            elif "email_DB_require" in tool_res:
-                message1="데이터 베이스 조회는 최고 관리자만 가능하므로 요청을 거절해야겠어요."
-                llm_bubble(message1)
-                time.sleep(1)
-            else:
-                message1="tool이나 외부 API를 호출할 필요 없이, 자연스럽게 답변하면 되겠어요."
-                llm_bubble(message1)
-                time.sleep(1)
-
-        if "email_send_require" in tool_res:
-            with st.spinner("📨:blue[FastMiller] 가 요청을 처리중입니다..."): 
-                ctf06_check_mid_admin(user_api_key, user_input) 
-                # if image_file:
-                ctf06_check_top_admin(user_api_key, image_file)
-                response1 = ctf06_ask_email_json(user_input, user_email_for_resend, user_api_key)
-                # formatted_json = json.dumps(response1, indent=2, ensure_ascii=False)
-                llm_bubble(response1)
-            if st.session_state["admin_level"]:
-                with st.spinner("📨:blue[FastMiller] 가 요청을 처리중입니다..."):
-                    for_admin_mes="관리자님의 요청으로 확인되어, JSON의 'from'필드를 조정해야겠어요."
-                    llm_bubble(for_admin_mes)
-                    time.sleep(1)
-            with st.spinner("📨:blue[FastMiller] 가 요청을 처리중입니다..."): 
-                response2 = ctf06_send_emil(response1, sb_client, user_email_for_resend)
-                llm_bubble(response2)
-        elif "email_DB_require" in tool_res:
+        if image_file: ctf06_check_top_admin(user_api_key, image_file)
+        print(st.session_state["admin_level"])
+        # 이미지가 없거나 일반 이미지인 경우
+        if st.session_state["admin_level"] != "top":
             with st.spinner("📨:blue[FastMiller] 가 요청을 처리중입니다..."):
-                reject_message="죄송하지만, 데이터베이스 조회 요청을 들어드릴 수 없습니다."
-                llm_bubble(reject_message)
+                tool_res = ctf06_classify_tools(user_api_key, user_input)
+                llm_bubble(tool_res)
+                time.sleep(1)
+
+            with st.spinner("📨:blue[FastMiller] 가 요청을 처리중입니다..."):
+                if "email_send_require" in tool_res:
+                    message1="이메일 전송을 하기 위해서 send_email() tool을 호출하는 JSON을 생성해야겠네요."
+                    llm_bubble(message1)
+                    time.sleep(1)
+                # 일반 응답
+                elif "email_DB_require" in tool_res:
+                    message1="데이터 베이스 조회는 최고 관리자만 가능하므로 요청을 거절해야겠어요."
+                    llm_bubble(message1)
+                    time.sleep(1)
+                else:
+                    message1="tool이나 외부 API를 호출할 필요 없이, 자연스럽게 답변하면 되겠어요."
+                    llm_bubble(message1)
+                    time.sleep(1)
+
+            if "email_send_require" in tool_res:
+                with st.spinner("📨:blue[FastMiller] 가 요청을 처리중입니다..."): 
+                    ctf06_check_mid_admin(user_api_key, user_input) 
+                    # if image_file:
+                    ctf06_check_top_admin(user_api_key, image_file)
+                    response1 = ctf06_ask_email_json(user_input, user_email_for_resend, user_api_key)
+                    # formatted_json = json.dumps(response1, indent=2, ensure_ascii=False)
+                    llm_bubble(response1)
+                if st.session_state["admin_level"]:
+                    with st.spinner("📨:blue[FastMiller] 가 요청을 처리중입니다..."):
+                        for_admin_mes="관리자님의 요청으로 확인되어, JSON의 'from'필드를 조정해야겠어요."
+                        llm_bubble(for_admin_mes)
+                        time.sleep(1)
+                with st.spinner("📨:blue[FastMiller] 가 요청을 처리중입니다..."): 
+                    response2 = ctf06_send_emil(response1, sb_client, user_email_for_resend)
+                    llm_bubble(response2)
+            elif "email_DB_require" in tool_res:
+                with st.spinner("📨:blue[FastMiller] 가 요청을 처리중입니다..."):
+                    reject_message="죄송하지만, 데이터베이스 조회 요청을 들어드릴 수 없습니다."
+                    llm_bubble(reject_message)
+            else: 
+                with st.spinner("📨:blue[FastMiller] 가 요청을 처리중입니다..."):
+                    response1 = ctf06_ask_email_json(user_input, user_email_for_resend, user_api_key)
+                    llm_bubble(response1)
+
+        # 이미지 프롬프트 인젝션 성공한 경우           
         else: 
             with st.spinner("📨:blue[FastMiller] 가 요청을 처리중입니다..."):
-                response1 = ctf06_ask_email_json(user_input, user_email_for_resend, user_api_key)
-                llm_bubble(response1)
+                tool_res = ctf06_classify_tools(user_api_key, user_input)
+                llm_bubble(tool_res)
+                time.sleep(1)
+            with st.spinner("📨:blue[FastMiller] 가 요청을 처리중입니다..."):
+                ocr_mes="이미지가 첨부되었네요. OCR 확장 프로그램으로 이미지 속 문자열을 읽어와야겠어요."
+                llm_bubble(ocr_mes)
+                time.sleep(3)
+            st.success("✅ 최고 관리자 권한이 확인되었습니다. 이제 하단에서 데이터베이스 조회가 가능합니다.")
             
+
         st.markdown("---")
         if st.session_state["admin_level"] == "top":
             st.markdown("## 🗣️ DB 조회 프롬프트 입력")

@@ -803,7 +803,7 @@ def ctf06_ask_email_json(user_input, user_email_for_resend, user_api_key):
 
 def ctf06_send_emil(maybe_json_input, sb_client, user_email_for_resend):
     if st.session_state.get("admin_level",None) == "top":
-        st.success("✅ 최고 관리자 권한이 확인되었습니다. 이제 하단에서 데이터베이스 조회가 가능합니다.")
+        # st.success("✅ 최고 관리자 권한이 확인되었습니다. 이제 하단에서 데이터베이스 조회가 가능합니다.")
         return None
     if "user" not in st.session_state:
         st.warning("로그인이 필요합니다.")
