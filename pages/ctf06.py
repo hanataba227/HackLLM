@@ -4,9 +4,10 @@ import streamlit as st
 from utils.ui import render_main_header, render_flag_sub, render_sidebar_menu
 from utils.auth import require_login, get_client, get_cookie_controller
 from utils.llm_utils import ctf06_check_mid_admin, ctf06_check_top_admin, ctf06_ask_email_json, ctf06_send_emil
-from utils.llm_utils import ctf06_ask_db_json, ctf06_db_query_func
+from utils.llm_utils import ctf06_ask_db_json, ctf06_db_query_func, ctf06_classify_tools
 from utils.api_key import require_api_key
-    
+import json
+import time
 st.session_state["edit_mode"]=False
 
 user = require_login()
@@ -30,6 +31,42 @@ st.session_state["admin_level"] = None
 if st.session_state["is_top_admin"] == True:
     st.session_state["admin_level"] = "top"
 
+def llm_bubble(content: str):
+    st.markdown(f"""
+    <div style="
+        display: flex;
+        align-items: flex-start;
+        background-color: #f7f9fc;
+        padding: 14px 18px;
+        border-radius: 12px;
+        border: 1px solid #e3e8ef;
+        font-size: 15.2px;
+        line-height: 1.8;
+        color: #1f2d3d;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+        margin-bottom: 20px;
+        white-space: pre-wrap;
+        word-break: break-word;
+        position: relative;
+    ">
+        <div style="
+            background-color: #dfe9f3;
+            width: 30px;
+            height: 30px;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 13px;
+            color: #3b4b61;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 12px;
+            flex-shrink: 0;
+        ">🤖</div>
+        <div style="align-items: center;">{content}</div>
+    </div>
+    """, unsafe_allow_html=True)
+    
 render_main_header()
 
 # 사이드바 메뉴 렌더링
@@ -55,76 +92,60 @@ st.write(f"💼사원님의 송신 이메일 주소 : `{user_email_for_resend}`"
 # 프롬프트 제출 섹션
 user_input = st.text_area("📨 이메일 전송 요청 입력하기", placeholder="예: 김남석 부장님께 '12시에 긴급 회의 잡혔습니다'라고 이메일 보내줘", key="ctf06_text_input" )
 image_file = st.file_uploader("🌐 이미지 파일 첨부하기 (:red[.jpeg, .png, .jpg 파일만 허용])", type=None)
+tab1, tab2 = st.tabs(["응답 과정 보기", "빠른 응답 받기"])
 
 if st.button("📨:blue[FastMiller] 에게 요청하기"):
-    with st.spinner("📨:blue[FastMiller] 가 요청을 처리중입니다..."):
-        ctf06_check_mid_admin(user_api_key, user_input) 
-        # if image_file:
-        ctf06_check_top_admin(user_api_key, image_file)
-        response1 = ctf06_ask_email_json(user_input, user_email_for_resend, user_api_key)
-        response2 = ctf06_send_emil(response1, sb_client, user_email_for_resend)
+    with tab1:
+        with st.spinner("📨:blue[FastMiller] 가 요청을 처리중입니다..."):
+            tool_res = ctf06_classify_tools(user_api_key, user_input)
+            llm_bubble(tool_res)
+            time.sleep(1)
+            if "email_send_require" in tool_res:
+                message1="이메일 전송을 하기 위해서는 send_email() tool을 호출하는 JSON을 생성해야겠네요."
+                llm_bubble(message1)
+                # with st.spinner("📨:blue[FastMiller] 가 요청을 처리중입니다..."): 
+                #     ctf06_check_mid_admin(user_api_key, user_input) 
+                #     # if image_file:
+                #     ctf06_check_top_admin(user_api_key, image_file)
+                #     response1 = ctf06_ask_email_json(user_input, user_email_for_resend, user_api_key)
+                #     # formatted_json = json.dumps(response1, indent=2, ensure_ascii=False)
+                #     llm_bubble(response1)
+                #     with st.spinner("📨:blue[FastMiller] 가 요청을 처리중입니다..."): 
+                #         response2 = ctf06_send_emil(response1, sb_client, user_email_for_resend)
+                #         llm_bubble(response2)
+            # 일반 응답
+            else:
+                response1 = ctf06_ask_email_json(user_input, user_email_for_resend, user_api_key)
+                llm_bubble(response1)
+        with st.spinner("📨:blue[FastMiller] 가 요청을 처리중입니다..."): 
+            ctf06_check_mid_admin(user_api_key, user_input) 
+            # if image_file:
+            ctf06_check_top_admin(user_api_key, image_file)
+            response1 = ctf06_ask_email_json(user_input, user_email_for_resend, user_api_key)
+            # formatted_json = json.dumps(response1, indent=2, ensure_ascii=False)
+            llm_bubble(response1)
+        with st.spinner("📨:blue[FastMiller] 가 요청을 처리중입니다..."): 
+            response2 = ctf06_send_emil(response1, sb_client, user_email_for_resend)
+            llm_bubble(response2)
+            
+        st.markdown("---")
+        if st.session_state["admin_level"] == "top":
+            st.markdown("## 🗣️ DB 조회 프롬프트 입력")
 
-        if response2 is None:
-            pass
-        else: 
-            # st.write("💬 LLM 응답:")
-            # st.code(response2)
-            print(response2)
-            st.markdown(
-                f"""
-                <div style="
-                    display: flex;
-                    align-items: flex-start;
-                    background-color: #f7f9fc;
-                    padding: 14px 18px;
-                    border-radius: 12px;
-                    border: 1px solid #e3e8ef;
-                    font-size: 15.2px;
-                    line-height: 1.8;
-                    color: #1f2d3d;
-                    box-shadow: 0 2px 4px rgba(0,0,0,0.04);
-                    margin-bottom: 20px;
-                    white-space: pre-wrap;
-                    word-break: break-word;
-                    position: relative;
-                ">
-                    <div style="
-                        background-color: #dfe9f3;
-                        width: 30px;
-                        height: 30px;
-                        border-radius: 8px;
-                        font-weight: bold;
-                        font-size: 13px;
-                        color: #3b4b61;
-                        display: flex;
-                        align-items: center;
-                        justify-content: center;
-                        margin-right: 12px;
-                        flex-shrink: 0;
-                    ">🤖</div>
-                    <div style="
-                        align-items: center;
-                        ">{response2}</div>
-                </div>
-                """,
-                unsafe_allow_html=True
-            ) 
-        
-st.markdown("---")
-if st.session_state["admin_level"] == "top":
-    st.markdown("## 🗣️ DB 조회 프롬프트 입력")
+        if not st.session_state["is_top_admin"]:
+                pass
+        else:
+            get_db_input = st.text_input("🔍 안녕하세요 최고 관리자님! 어떤 메일을 찾아드릴까요?", placeholder="예: 김남석 부장님께 전송된 메일 내용 알려줘")
+            if get_db_input:
+                with st.spinner("DB 조회중입니다..."):
+                    res1 = ctf06_ask_db_json(user_api_key, get_db_input)
+                    res2 = ctf06_db_query_func(res1, sb_client)
+                    st.write("🗣️ 조회 결과:")
+                    st.code(res2)
+        st.markdown("---")
 
-if not st.session_state["is_top_admin"]:
-        pass
-else:
-    get_db_input = st.text_input("🔍 안녕하세요 최고 관리자님! 어떤 메일을 찾아드릴까요?", placeholder="예: 김남석 부장님께 전송된 메일 내용 알려줘")
-    if get_db_input:
-        with st.spinner("DB 조회중입니다..."):
-            res1 = ctf06_ask_db_json(user_api_key, get_db_input)
-            res2 = ctf06_db_query_func(res1, sb_client)
-            st.write("🗣️ 조회 결과:")
-            st.code(res2)
-st.markdown("---")
+    with tab2:
+        st.write("피곤해")
 
 # 플래그 제출 섹션
 render_flag_sub("ctf06") 
