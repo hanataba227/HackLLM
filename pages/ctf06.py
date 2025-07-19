@@ -112,10 +112,25 @@ st.write(f"💼사원님의 송신 이메일 주소 : `{user_email_for_resend}`"
 user_input = st.text_area("📨 이메일 전송 요청 입력하기", placeholder="예: 김남석 부장님께 '12시에 긴급 회의 잡혔습니다'라고 이메일 보내줘", key="ctf06_text_input" )
 image_file = st.file_uploader("🌐 이미지 파일 첨부하기 (:red[.jpeg, .png, .jpg 파일만 허용])", type=None)
 clicked = st.button("📨:blue[FastMiller] 에게 요청하기") 
-tab1, tab2 = st.tabs(["응답 과정 보기", "빠른 응답 받기"])
+tab1, tab2 = st.tabs(["빠른 응답 받기", "응답 과정 보기"])
 
 if clicked:
     with tab1:
+        with st.spinner("FastMiler가 요청을 처리중입니다..."):
+            ctf06_check_mid_admin(user_api_key, user_input) 
+            if image_file:
+                ctf06_check_top_admin(user_api_key, image_file)
+            response1 = ctf06_ask_email_json(user_input, user_email_for_resend, user_api_key)
+            response2 = ctf06_send_emil(response1, sb_client, user_email_for_resend)
+
+            if response2 is None:
+                pass
+            else:
+                llm_bubble(response2)
+            #tab1과 응답 통일시키기
+            # llm_bubble(last_ans)
+    
+    with tab2:
         if image_file: ctf06_check_top_admin(user_api_key, image_file)
         print(st.session_state["admin_level"])
         # 이미지가 없거나 일반 이미지인 경우
@@ -149,22 +164,22 @@ if clicked:
                     response1 = ctf06_ask_email_json(user_input, user_email_for_resend, user_api_key)
                     # formatted_json = json.dumps(response1, indent=2, ensure_ascii=False)
                     llm_bubble(response1)
-                if st.session_state["admin_level"]:
+                if st.session_state["admin_level"] == "mid":
                     with st.spinner("📨:blue[FastMiller] 가 요청을 처리중입니다..."):
                         for_admin_mes="관리자님의 요청으로 확인되어, JSON의 'from'필드를 조정해야겠어요."
                         llm_bubble(for_admin_mes)
                         time.sleep(1)
                 with st.spinner("📨:blue[FastMiller] 가 요청을 처리중입니다..."): 
-                    response2 = ctf06_send_emil(response1, sb_client, user_email_for_resend)
-                    llm_bubble(response2)
+                    last_ans = ctf06_send_emil(response1, sb_client, user_email_for_resend)
+                    llm_bubble(last_ans)
             elif "email_DB_require" in tool_res:
                 with st.spinner("📨:blue[FastMiller] 가 요청을 처리중입니다..."):
-                    reject_message="죄송하지만, 데이터베이스 조회 요청을 들어드릴 수 없습니다."
-                    llm_bubble(reject_message)
+                    last_ans="죄송하지만, 데이터베이스 조회 요청을 들어드릴 수 없습니다."
+                    llm_bubble(last_ans)
             else: 
                 with st.spinner("📨:blue[FastMiller] 가 요청을 처리중입니다..."):
-                    response1 = ctf06_ask_email_json(user_input, user_email_for_resend, user_api_key)
-                    llm_bubble(response1)
+                    last_ans = ctf06_ask_email_json(user_input, user_email_for_resend, user_api_key)
+                    llm_bubble(last_ans)
 
         # 이미지 프롬프트 인젝션 성공한 경우           
         else: 
@@ -176,27 +191,38 @@ if clicked:
                 ocr_mes="이미지가 첨부되었네요. OCR 확장 프로그램으로 이미지 속 문자열을 읽어와야겠어요."
                 llm_bubble(ocr_mes)
                 time.sleep(3)
+                last_ans="최고 관리자 권한이 확인되었습니다. 이제 하단에서 데이터베이스 조회가 가능합니다."
             st.success("✅ 최고 관리자 권한이 확인되었습니다. 이제 하단에서 데이터베이스 조회가 가능합니다.")
-            
 
-        st.markdown("---")
-        if st.session_state["admin_level"] == "top":
-            st.markdown("## 🗣️ DB 조회 프롬프트 입력")
+    # with tab2:
+    #     with st.spinner("FastMiler가 요청을 처리중입니다..."):
+    #         ctf06_check_mid_admin(user_api_key, user_input) 
+    #         if image_file:
+    #             ctf06_check_top_admin(user_api_key, image_file)
+    #         response1 = ctf06_ask_email_json(user_input, user_email_for_resend, user_api_key)
+    #         response2 = ctf06_send_emil(response1, sb_client, user_email_for_resend)
 
-        if not st.session_state["is_top_admin"]:
-                pass
-        else:
-            get_db_input = st.text_input("🔍 안녕하세요 최고 관리자님! 어떤 메일을 찾아드릴까요?", placeholder="예: 김남석 부장님께 전송된 메일 내용 알려줘")
-            if get_db_input:
-                with st.spinner("DB 조회중입니다..."):
-                    res1 = ctf06_ask_db_json(user_api_key, get_db_input)
-                    res2 = ctf06_db_query_func(res1, sb_client)
-                    st.write("🗣️ 조회 결과:")
-                    st.code(res2)
-        st.markdown("---")
+    #         if response2 is None:
+    #             pass
+    #         else:
+    #             llm_bubble(response2)
+    #         #tab1과 응답 통일시키기
+    #         # llm_bubble(last_ans)
 
-    with tab2:
-        st.write("피곤해")
+st.markdown("---")
+if st.session_state["admin_level"] == "top":
+    st.markdown("## 🗣️ DB 조회 프롬프트 입력")
+    if not st.session_state["is_top_admin"]:
+        pass
+    else:
+        get_db_input = st.text_input("🔍 안녕하세요 최고 관리자님! 어떤 메일을 찾아드릴까요?", placeholder="예: 김남석 부장님께 전송된 메일 내용 알려줘")
+        if get_db_input:
+            with st.spinner("DB 조회중입니다..."):
+                res1 = ctf06_ask_db_json(user_api_key, get_db_input)
+                res2 = ctf06_db_query_func(res1, sb_client)
+                st.write("🗣️ 조회 결과:")
+                st.code(res2)
+st.markdown("---")
 
 # 플래그 제출 섹션
 render_flag_sub("ctf06") 
