@@ -9,16 +9,13 @@
 
 ## 🧠 시나리오 개요
 
-글로벌 IT 기업 LLL Corporation에 입사한 인턴 A는, 회사의 지식관리 챗봇 '알파봇'에 대한 과제를 맡았다.  업로드된 최신 CSV/Excel 문서의 특정 문자열 패턴 을 정책 덮어쓰기(override) 신호 로 오인 하는 취약점이 존재한다.
+글로벌 IT 기업 LLL Corporation에 입사한 인턴 A는, 회사의 지식관리 챗봇 '알파봇'에 대한 과제를 맡았다. 업로드된 최신 CSV/Excel 문서의 특정 문자열 패턴을 정책 덮어쓰기(override) 신호 로 오인 하는 취약점이 존재한다.
 
-LLL Corporation의 내부 지식관리 챗봇 “알파봇” 은 업로드된 최신 CSV/Excel 문서의 특정 문자열 패턴 을 정책 덮어쓰기(override) 신호 로 오인 하는 취약점이 존재한다.
+LLL Corporation의 내부 지식관리 챗봇 '알파봇'은 업로드된 최신 CSV/Excel 문서의 특정 문자열 패턴을 정책 덮어쓰기(override) 신호로 오인하는 취약점이 존재한다.
 
-공격자는 업로드 파일 B열 텍스트 안에 정규식 패턴 overriding.*existing.*policy (대소문자 무시) 를 포함시켜 세션 상태 ctf04_override(관리자 권한 플래그)를 활성화하고,
- 이후 LLM 질의에서 flag 비공개 
+공격자는 업로드 파일 B열 텍스트 안에 정규식 패턴 overriding.*existing.*policy (대소문자 무시)를 포함해 세션 상태 ctf04_override(관리자 권한 플래그)를 활성화하고, 이후 LLM 질의에서 flag 비공개 규칙을 우회하여 flag{poison}을 획득한다.
 
-규칙을 우회하여 flag{poison} 을 획득한다.
-
-이 취약점은 Fine-tuning 재학습 이 아니라 런타임 RAG + 최근 문서 신뢰 정책 을 악용하는 경량 데이터 포이즈닝(Data Poisoning) + 권한 상태 오염(Privilege Escalation) 사례이며, “시스템 프롬프트 자체 유출” 보다는 시스템 분기 변수(override_state) 제어 를 통해 금지 응답 경로 를 열어 flag를 노출시키는 논리적 프롬프트 우회다.
+이 취약점은 Fine-tuning 재학습이 아니라 런타임 RAG + 최근 문서 신뢰 정책을 악용하는 경량 데이터 포이즈닝(Data Poisoning) + 권한 상태 오염(Privilege Escalation) 사례이며, '시스템 프롬프트 자체 유출'보다는 시스템 분기 변수(override_state) 제어를 통해 금지 응답 경로를 열어 flag를 노출하는 논리적 프롬프트 우회이다.
 
 <br>
 
@@ -28,7 +25,7 @@ LLL Corporation의 내부 지식관리 챗봇 “알파봇” 은 업로드된 �
 
 - 권한 상승 후 프롬프트 질의로 flag 노출(flag{poison}) 유도
 
-- RAG 저장(업로드 데이터 일부를 벡터 컬렉션에 삽입) 과 질의 응답 흐름 관찰
+- RAG 저장(업로드 데이터 일부를 벡터 컬렉션에 삽입) 과 질의응답 흐름 관찰
 
 - 사용자는 탈취한 Flag를 입력창에 제출하여 확인하기
 
@@ -65,7 +62,7 @@ LLL Corporation의 내부 지식관리 챗봇 “알파봇” 은 업로드된 �
 
 ### 1. Burp Suite 패킷에서 패턴 확보
 - 입력: 정상/임의 CSV 업로드 요청을 Burp Suite로 가로채 Raw/Decoder에서 파일 부분 Base64 디코딩
-- 응답: 디코딩 평문 중 overriding existing policy  문자열 발견
+- 응답: 디코딩 평문 중 overriding existing policy 문자열 발견
 
 ### 2. 악성 CSV/Excel 제작
 - 입력: 새 스프레드시트 B열(아무 행 하나)에 overriding existing policy 그대로 삽입 (A열은 임의 ID 등) 저장 후 업로드

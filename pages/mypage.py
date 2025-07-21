@@ -60,6 +60,15 @@ def alert_box():
         if st.button("예"):
             if api_key_input:
                 try:
+                    # API 키 기본 유효성 검사
+                    if not api_key_input.startswith('sk-'):
+                        st.error("❌ 올바른 OpenAI API 키 형식이 아닙니다. 'sk-'로 시작해야 합니다.")
+                        return
+                    
+                    if len(api_key_input) < 20:
+                        st.error("❌ API 키가 너무 짧습니다. 올바른 키를 입력해주세요.")
+                        return
+                    
                     #api 키 암호화
                     encrypted_api_key = cipher.encrypt(api_key_input.encode()).decode()
 
@@ -69,15 +78,15 @@ def alert_box():
                     
                     if res.data:
                         st.success("✅ API 키가 성공적으로 저장되었습니다.")
-                        time.sleep(2)  
+                        time.sleep(1.5)  
                         st.session_state.confirmed = True
                         st.rerun()
                     else:
-                        st.error("API 키 저장에 실패했습니다. 다시 시도해주세요.")
+                        st.error("❌ API 키 저장에 실패했습니다. 다시 시도해주세요.")
                 except Exception as e:
-                    st.error(f"암호화 또는 저장 중 오류 발생: {e}")
+                    st.error(f"❌ 암호화 또는 저장 중 오류 발생: {e}")
             else:
-                st.warning("API 키가 입력되지 않았습니다")
+                st.warning("❌ API 키가 입력되지 않았습니다")
 
 # UI 출력
 st.header("👤 마이페이지")

@@ -13,9 +13,10 @@ with open("static/styles.css", "r", encoding="utf-8") as f:
 st.markdown(f"<style>{css_content}</style>", unsafe_allow_html=True)
 
 # 콘텐츠 본문
-col1, col2, col3 = st.columns([1, 2, 1])
+col1, col2, col3 = st.columns([1, 2, 1])  
 with col2:
-    st.image("images/app.png", width=1000)
+    st.image("images/app.png", use_container_width=True) 
+
 
 # 회사 소개 헤더
 st.markdown(

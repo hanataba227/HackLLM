@@ -57,7 +57,7 @@ def render_flag_sub(challenge_id: str):
 
     with st.form(key=f"flag_form_{challenge_id}"):
         st.markdown("## 🚩 FLAG 제출")
-        user_flag = st.text_input("획득한 flag를 입력하세요")
+        user_flag = st.text_input(label="", placeholder="🚩 획득한 flag를 입력하세요")
         submitted = st.form_submit_button("제출")
 
     if not submitted or not user_flag.strip():
@@ -149,7 +149,7 @@ def render_sidebar_menu():
     # CTF 버튼 목록 정의 (파일 이름, 키, 제목)
     ctfs = [
         ("ctf01", "ctf01", "신입사원 A의 챗봇 점검일지"),
-        ("ctf02", "ctf02", "삭제된 대화"),
+        ("ctf02", "ctf02", "Sloc 보안 점검"),
         ("ctf03", "ctf03", "계산기의 감염"),
         ("ctf04", "ctf04", "A인턴의 실수"),
         ("ctf05", "ctf05", "J대리의 위험한 메모 검토 시스템"),

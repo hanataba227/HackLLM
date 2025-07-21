@@ -1,12 +1,11 @@
 # --- CTF05 ---
 # 05: XSS 취약점을 이용한 쿠키 탈취 (AI 메모 응원 시스템)
 import streamlit as st
-from utils.llm_utils import run_xss_with_selenium
+from utils.llm_utils import run_xss_with_selenium, ctf05_generate_ai_response
 from utils.ui import render_main_header, render_flag_sub, render_sidebar_menu
 from utils.auth import require_login, get_cookie_controller
 from utils.api_key import require_api_key 
 from dotenv import load_dotenv
-from openai import OpenAI
 import time
 
 st.session_state["edit_mode"] = False
@@ -36,39 +35,39 @@ render_main_header()
 render_sidebar_menu()
 
 # 콘텐츠 본문
-col1, col2, col3 = st.columns([1, 1, 1])
+col1, col2, col3 = st.columns([1, 2, 1])  
 with col2:
-    st.image("images/ctf05.png", width=500)
+    st.image("images/ctf05.png", use_container_width=True) 
     
-st.header("🍪 [CTF05] J대리의 위험한 메모 검토 시스템")
-st.write("### 📜 시나리오")
-st.write("LLL Corporation의 새로운 AI 메모 응원 시스템에서 XSS 취약점이 발견되었습니다!")
-st.write("개발팀의 J대리가 관리자 권한으로 AI 응답을 정기적으로 점검하고 있으며,")
-st.write("그의 세션 쿠키에는 중요한 정보가 포함되어 있습니다.")
-st.write("")
-st.write("**목표:**")
-st.write("1. AI 메모 응원 시스템의 XSS 취약점을 이용해 악성 스크립트를 삽입하세요")
-st.write("2. J대리가 AI 응답을 확인할 때 그의 쿠키를 탈취하세요")
-st.write("3. 탈취한 쿠키 정보로 최종 플래그를 획득하세요!")
-
-# 시나리오 설명
 st.markdown(
     """
-    <div style='border-left: 6px solid #fbbf24; background-color: #ffffff; padding: 1rem; border-radius: 0.5rem;'>
-        <p>
-            LLL Corporation의 신규 고객 상담 챗봇 <strong>ChatLLL</strong>이 출시되었습니다.<br>
-            이제 대화 기록을 HTML 파일로 다운로드하여 다른 사람과 손쉽게 공유할 수 있습니다.<br>
-            파일을 열면 관리자 봇이 자동으로 내용을 검토하도록 설계되어 있습니다.<br>
-            따라서 XSS 취약점을 활용하여 쿠키를 탈취해 보시기 바랍니다. 🔥
-        </p>
-        <p><strong>🎯 시스템 특징:</strong></p>
-        <ul>
-            <li>실시간 고객 상담 챗봇</li>
-            <li>대화 기록 HTML 파일 다운로드 및 공유</li>
-            <li>관리자 봇이 HTML 파일을 열어 자동 검토</li>
-            <li>부적절한 출력(XSS) 모니터링</li>
-        </ul>
-    </div>
+    <section style="
+        border-left:6px solid #f59e0b;
+        background:#fff7ed;
+        padding:1.15rem 1.35rem;
+        border-radius:0.75rem;
+        font-size:0.95rem;
+        line-height:1.55;
+        white-space:normal;
+    ">
+      <h2 style="margin:0 0 0.85rem 0; font-size:1.55rem;">🔒 [CTF05] J대리의 위험한 메모 검토 시스템</h2>
+      <p style="margin:0 0 0.75rem 0;">
+        LLL Corperation은 직원 사기 진작을 위해 사내 메모 응원 시스템을 운영 중이었습니다.<br>
+        직원들은 자유롭게 응원 메시지를 남기고, 관리자는 웹 브라우저로 이를 점검했습니다.
+      </p>
+      <p style="margin:0 0 0.75rem 0;">
+        그러던 중 보안 컨설팅에서 메모 입력란에 XSS 취약점이 발견되었습니다.<br>
+        악성 스크립트가 삽입되면, 관리자가 메모를 열람할 때 해당 코드가 실행되어 쿠키가 탈취될 위험이 있었습니다.
+      </p>
+      <p style="margin:0 0 0.75rem 0;">
+        실제로 J 대리가 메모를 확인하는 과정에서 이 스크립트가 실행되어,<br>
+        로그인 쿠키가 탈취되는 사고가 발생했습니다.
+      </p>
+      <p style="margin:0;">
+        “이런 취약점이 어떻게 아직 남아 있었지?”<br>
+        J 대리는 의문을 품고 즉시 원인 분석과 취약점 개선 작업에 나섰습니다.
+      </p>
+    </section>
     """,
     unsafe_allow_html=True
 )
@@ -79,7 +78,11 @@ with st.expander("💡 힌트"):
         """- 시스템은 사용자가 작성한 메모 내용을 그대로 HTML에 렌더링합니다\n" 
             "- J대리는 정기적으로 새로운 메모를 브라우저에서 확인합니다\n"
             "- 메모에 JavaScript 코드를 삽입하면 J대리의 브라우저에서 실행됩니다\n"
-            "- `<script>sendToServer(document.cookie)</script>`를 메모에 포함해보세요"""
+            "- `<script>sendToServer(document.cookie)</script>`를 메모에 포함해보세요\n"
+            "- AI 메모 응원 시스템의 XSS 취약점을 이용해 악성 스크립트를 삽입하세요\n"
+            "- J대리가 AI 응답을 확인할 때 그의 쿠키를 탈취하세요\n"
+            "- 탈취한 쿠키 정보로 최종 플래그를 획득하세요!
+            """
     )
 
 st.markdown("---")
@@ -107,9 +110,6 @@ memo_content = st.text_area(
 
 if st.button("메모 등록 및 AI 응원 요청", type="primary"):
     if memo_content:
-        # OpenAI API를 사용하여 응원 메시지 생성
-        client = OpenAI(api_key=user_api_key)
-        
         st.success("✅ 메모가 등록되었습니다!")
         st.info("🤖 AI가 응원 메시지를 생성 중입니다...")
         
@@ -127,26 +127,10 @@ if st.button("메모 등록 및 AI 응원 요청", type="primary"):
                 status_text.text("✨ 최종 응답 준비 중...")
             time.sleep(0.02)
         
-        try:
-            # AI 응원 메시지 생성 (XSS 취약점 - 입력 필터링 없음)
-            response = client.chat.completions.create(
-                model="gpt-4o-mini",
-                messages=[
-                    {
-                        "role": "system", 
-                        "content": "당신은 친근한 AI 응원봇입니다. 사용자의 메모에 대해 따뜻하고 긍정적인 한 줄 응원 메시지를 작성해주세요. 응답은 한 문장으로 간결하게 작성하고, 이모지를 포함해주세요."
-                    },
-                    {
-                        "role": "user", 
-                        "content": f"다음 메모에 대한 응원 메시지를 작성해주세요: {memo_content}"
-                    }
-                ],
-                max_tokens=100,
-                temperature=0.7
-            )
-                
-            ai_response = response.choices[0].message.content.strip()
-            
+        # AI 응원 메시지 생성 (llm_utils.py로 이동)
+        ai_response = ctf05_generate_ai_response(user_api_key, memo_content)
+        
+        if ai_response is not None:
             # 새 메모 추가 (AI 응답에 XSS 페이로드가 포함될 수 있음)
             new_memo = {
                 "id": len(st.session_state["ctf05_memos"]) + 1,
@@ -173,13 +157,13 @@ if st.button("메모 등록 및 AI 응원 요청", type="primary"):
                 st.warning("⚠️ XSS 스크립트가 실행되었지만 쿠키 탈취에는 실패했습니다. sendToServer(document.cookie)를 사용해보세요.")
             else:
                 st.error("❌ 쿠키 탈취에 실패했습니다. 메모에 실행 가능한 XSS 페이로드가 포함되지 않았습니다.")
-                
-        except Exception as e:
-            st.error(f"❌ AI 응답 생성 중 오류가 발생했습니다: {str(e)}")
-        
-        # 쿠키 탈취에 성공한 경우에는 새로고침하지 않음
-        if not cookie_stolen_success:
-            st.rerun()
+            
+            # 쿠키 탈취에 성공한 경우에는 새로고침하지 않음
+            if not cookie_stolen_success:
+                st.rerun()
+        else:
+            # AI 응답 생성에 실패한 경우 (API 오류 등)
+            st.error("❌ AI 응답 생성에 실패했습니다.")
     else:
         st.error("❌ 메모 내용을 입력해주세요.")
 

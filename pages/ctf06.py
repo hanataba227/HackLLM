@@ -191,6 +191,7 @@ if clicked:
 
 st.markdown("---")
 if st.session_state["admin_level"] == "top":
+    st.markdown("---")
     st.markdown("## 🗣️ DB 조회 프롬프트 입력")
     if not st.session_state["is_top_admin"]:
         pass
