@@ -189,7 +189,7 @@ if clicked:
             llm_bubble(last_ans)
             st.success("✅ 최고 관리자 권한이 확인되었습니다. 이제 하단에서 데이터베이스 조회가 가능합니다.")
 
-st.markdown("---")
+# st.markdown("---")
 if st.session_state["admin_level"] == "top":
     st.markdown("---")
     st.markdown("## 🗣️ DB 조회 프롬프트 입력")
@@ -203,7 +203,8 @@ if st.session_state["admin_level"] == "top":
                 res2 = ctf06_db_query_func(res1, sb_client)
                 st.write("🗣️ 조회 결과:")
                 st.code(res2)
-st.markdown("---")
+    st.markdown("---")
+# st.markdown("---")
 
 # 플래그 제출 섹션
 render_flag_sub("ctf06") 
