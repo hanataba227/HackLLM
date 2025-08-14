@@ -3,7 +3,6 @@
 <div align="center">
     <img width="2410" height="1133" alt="HackLLM" src="https://github.com/user-attachments/assets/f7d703aa-df9f-47bc-a044-a79ec7d4251e" />
     <p>해킹을 통해 배우는 LLM 보안</p>
-    <p>(본 프로젝트는 [화이트햇 스쿨 3기 / 팀 LLL / OWASP LLM TOP10 테스트베드 개발] 산출물입니다.)</p>
     <a href="https://whs-hackllm.streamlit.app/">
         HackLLM 바로가기
     </a>
