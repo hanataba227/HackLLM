@@ -151,7 +151,3 @@
 
 ## 🔨 Structure | 구조
 ![HackLLM 구조도](https://github.com/user-attachments/assets/9929643f-d54f-4637-a16c-1624e85864b7)
-
-
-## 🔗 Links
-- [화이트햇 스쿨 공식 홈페이지](https://whitehatschool.kr/home/kor/main.do)
