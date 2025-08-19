@@ -150,4 +150,5 @@
 <br />
 
 ## 🔨 Structure | 구조
-![HackLLM 구조도](https://github.com/user-attachments/assets/9929643f-d54f-4637-a16c-1624e85864b7)
+![HackLLM 구조도](https://github.com/user-attachments/assets/1328b9db-958b-4cb1-a461-1f7b340c7804)
+
