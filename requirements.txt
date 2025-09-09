@@ -11,7 +11,7 @@ backoff==2.2.1
 streamlit-cookies-controller==0.0.4
 selenium==4.15.0
 webdriver-manager==4.0.1
-langchain-community==0.2.19
+langchain-community==0.3.27
 vecs==0.4.2
 supabase==1.0.3
 pandas==2.2.2
